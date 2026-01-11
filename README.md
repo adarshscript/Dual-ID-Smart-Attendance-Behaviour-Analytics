@@ -47,12 +47,12 @@ MASTER card allows attendance using **any registered fingerprint**.
 
 ## 🖥 Serial Output Format
 
-Name,Roll,Status,Date Time
+- Name,Roll,Status,Date Time
 
 
-Example:
-Adarsh,4,ENTRY,2026-01-11 10:15:45
-MASTER,2,EXIT,2026-01-11 16:30:12
+- Example:
+- Adarsh,4,ENTRY,2026-01-11 10:15:45
+- MASTER,2,EXIT,2026-01-11 16:30:12
 
 
 ---
