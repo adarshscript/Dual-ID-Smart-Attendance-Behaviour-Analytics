@@ -1,3 +1,10 @@
+// =====================================================
+// PROJECT NAME : Dual ID Attendance System
+// AUTHOR       : Adarsh Kumar Maurya
+// DESCRIPTION  : RFID + Fingerprint based Attendance
+// NOTE         : Sensitive UID values are masked for privacy
+// =====================================================
+
 #include <SPI.h>
 #include <MFRC522.h>
 #include <Wire.h>
@@ -6,51 +13,55 @@
 #include <Adafruit_Fingerprint.h>
 #include <SoftwareSerial.h>
 
-// ----- RFID -----
+// ---------------- RFID CONFIG ----------------
 #define RST_PIN 9
 #define SS_PIN 10
 MFRC522 rfid(SS_PIN, RST_PIN);
 
-// ----- Finger -----
-SoftwareSerial mySerial(2, 3);
+// ---------------- FINGERPRINT CONFIG ----------------
+SoftwareSerial mySerial(2, 3); // TX, RX
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 
-// ----- LCD -----
+// ---------------- LCD CONFIG ----------------
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-// ----- RTC -----
+// ---------------- RTC CONFIG ----------------
 RTC_DS3231 rtc;
 
-// ----- LED + BUZZER -----
+// ---------------- LED & BUZZER ----------------
 #define GREEN_LED 6
 #define YELLOW_LED 5
 #define RED_LED 4
 #define BUZZER 7
 
-// ----- MASTER CARD (CAN ACCEPT ANY FINGER) -----
-byte masterCard[4] = {0x13, 0xB4, 0xEA, 0x2C};
+// ---------------- MASTER CARD ----------------
+// NOTE: UID masked for security (replace ** with real values)
+byte masterCard[4] = {0x**, 0x**, 0x**, 0x**};
 
-// ----- USERS -----
+// ---------------- USER STRUCTURE ----------------
 struct User {
-  byte uid[4];
-  uint8_t fingerID;
-  String name;
-  int roll;
+  byte uid[4];        // RFID UID
+  uint8_t fingerID;   // Fingerprint ID
+  String name;        // Student Name
+  int roll;           // Roll Number
 };
 
+// ---------------- REGISTERED USERS ----------------
+// NOTE: All card UIDs are masked for GitHub privacy
 User users[] = {
-  {{0xA3, 0x5F, 0x21, 0x21}, 1, "Ankit", 1},
-  {{0x13, 0x17, 0xA0, 0x20}, 2, "Sachin", 2},
-  {{0xB3, 0xD9, 0xB9, 0x20}, 3, "Shivam", 3},
-  {{0x73, 0x74, 0x9E, 0x20}, 5, "Haraprit", 5},
-  {{0xA6, 0xFF, 0xFA, 0x03}, 4, "Adarsh", 4}
+  {{0x**, 0x**, 0x**, 0x**}, 1, "Ankit", 1},
+  {{0x**, 0x**, 0x**, 0x**}, 2, "Sachin", 2},
+  {{0x**, 0x**, 0x**, 0x**}, 3, "Shivam", 3},
+  {{0x**, 0x**, 0x**, 0x**}, 4, "Adarsh", 4},
+  {{0x**, 0x**, 0x**, 0x**}, 5, "Haraprit", 5}
 };
 
 int totalUsers = sizeof(users) / sizeof(users[0]);
 
-// ENTRY/EXIT MEMORY
-bool lastStatus[20];
+// ---------------- ENTRY / EXIT MEMORY ----------------
+bool lastStatus[20];  // true = IN, false = OUT
 
+// ---------------- FIND USER ----------------
 int getUserIndex(byte *uid) {
   for (int i = 0; i < totalUsers; i++) {
     if (memcmp(uid, users[i].uid, 4) == 0) {
@@ -60,11 +71,14 @@ int getUserIndex(byte *uid) {
   return -1;
 }
 
+// ---------------- CHECK MASTER CARD ----------------
 bool isMasterCard(byte *uid) {
   return memcmp(uid, masterCard, 4) == 0;
 }
 
+// ================= SETUP =================
 void setup() {
+
   Serial.begin(9600);
 
   SPI.begin();
@@ -76,7 +90,9 @@ void setup() {
   lcd.init();
   lcd.backlight();
   lcd.clear();
-  lcd.print("SYSTEM READY");
+  lcd.print("Dual ID System");
+  lcd.setCursor(0, 1);
+  lcd.print("Initializing");
 
   rtc.begin();
 
@@ -85,31 +101,33 @@ void setup() {
   pinMode(RED_LED, OUTPUT);
   pinMode(BUZZER, OUTPUT);
 
-  delay(1500);
+  delay(2000);
+  lcd.clear();
+  lcd.print("System Ready");
+  delay(1000);
   lcd.clear();
 }
 
+// ================= LOOP =================
 void loop() {
 
+  // Wait for RFID card
   if (!rfid.PICC_IsNewCardPresent() || !rfid.PICC_ReadCardSerial())
     return;
 
   byte *uid = rfid.uid.uidByte;
 
-  // ---------------------------
-  // CASE 1: MASTER CARD
-  // ---------------------------
+  // ================= MASTER CARD MODE =================
   if (isMasterCard(uid)) {
 
     lcd.clear();
-    lcd.print("MASTER CARD");
+    lcd.print("MASTER ACCESS");
     lcd.setCursor(0, 1);
-    lcd.print("Put ANY Finger");
+    lcd.print("Scan Finger");
 
     digitalWrite(YELLOW_LED, HIGH);
 
     while (finger.getImage() != FINGERPRINT_OK);
-
     finger.image2Tz();
     int result = finger.fingerFastSearch();
 
@@ -118,9 +136,8 @@ void loop() {
     if (result == FINGERPRINT_OK) {
 
       int fingerID = finger.fingerID;
-
-      // Find which user has this finger
       int userIndex = -1;
+
       for (int i = 0; i < totalUsers; i++) {
         if (users[i].fingerID == fingerID) {
           userIndex = i;
@@ -134,46 +151,42 @@ void loop() {
         lastStatus[userIndex] = nowIN;
 
         String status = nowIN ? "ENTRY" : "EXIT";
-
         DateTime now = rtc.now();
-        char timestamp[30];
-        sprintf(timestamp, "%04d-%02d-%02d %02d:%02d:%02d",
+
+        char timeStamp[25];
+        sprintf(timeStamp, "%04d-%02d-%02d %02d:%02d:%02d",
                 now.year(), now.month(), now.day(),
                 now.hour(), now.minute(), now.second());
+
+        lcd.clear();
+        lcd.print("MASTER ");
+        lcd.print(status);
+        lcd.setCursor(0, 1);
+        lcd.print(users[userIndex].name);
 
         digitalWrite(GREEN_LED, HIGH);
         tone(BUZZER, 700, 200);
 
-        // LCD
-        lcd.clear();
-        lcd.print("MASTER: ");
-        lcd.print(status);
-        lcd.setCursor(0, 1);
-        lcd.print(timestamp);
+        Serial.print("MASTER,");
+        Serial.print(users[userIndex].roll);
+        Serial.print(",");
+        Serial.print(status);
+        Serial.print(",");
+        Serial.println(timeStamp);
 
-        // Excel: Name=MASTER, Roll=finger user roll
-        Serial.print("MASTER"); Serial.print(",");
-        Serial.print(users[userIndex].roll); Serial.print(",");
-        Serial.print(status); Serial.print(",");
-        Serial.println(timestamp);
-
-        delay(1800);
+        delay(2000);
         digitalWrite(GREEN_LED, LOW);
       }
     }
-
     return;
   }
 
-  // ---------------------------
-  // CASE 2: NORMAL CARD
-  // ---------------------------
-
+  // ================= NORMAL USER MODE =================
   int userIndex = getUserIndex(uid);
 
   if (userIndex == -1) {
     lcd.clear();
-    lcd.print("Card Not Found");
+    lcd.print("Invalid Card");
     digitalWrite(RED_LED, HIGH);
     tone(BUZZER, 1200, 300);
     delay(1500);
@@ -184,12 +197,11 @@ void loop() {
   lcd.clear();
   lcd.print(users[userIndex].name);
   lcd.setCursor(0, 1);
-  lcd.print("Put Finger...");
+  lcd.print("Place Finger");
 
   digitalWrite(YELLOW_LED, HIGH);
 
   while (finger.getImage() != FINGERPRINT_OK);
-
   finger.image2Tz();
   int result = finger.fingerFastSearch();
 
@@ -201,39 +213,38 @@ void loop() {
     lastStatus[userIndex] = nowIN;
 
     String status = nowIN ? "ENTRY" : "EXIT";
-
     DateTime now = rtc.now();
-    char timestamp[30];
-    sprintf(timestamp, "%04d-%02d-%02d %02d:%02d:%02d",
+
+    char timeStamp[25];
+    sprintf(timeStamp, "%04d-%02d-%02d %02d:%02d:%02d",
             now.year(), now.month(), now.day(),
             now.hour(), now.minute(), now.second());
-
-    digitalWrite(GREEN_LED, HIGH);
-    tone(BUZZER, 700, 200);
 
     lcd.clear();
     lcd.print(status);
     lcd.setCursor(0, 1);
-    lcd.print(timestamp);
+    lcd.print(timeStamp);
 
-    Serial.print(users[userIndex].name); Serial.print(",");
-    Serial.print(users[userIndex].roll); Serial.print(",");
-    Serial.print(status); Serial.print(",");
-    Serial.println(timestamp);
+    digitalWrite(GREEN_LED, HIGH);
+    tone(BUZZER, 700, 200);
 
-    delay(1800);
+    Serial.print(users[userIndex].name);
+    Serial.print(",");
+    Serial.print(users[userIndex].roll);
+    Serial.print(",");
+    Serial.print(status);
+    Serial.print(",");
+    Serial.println(timeStamp);
+
+    delay(2000);
     digitalWrite(GREEN_LED, LOW);
 
   } else {
     lcd.clear();
-    lcd.print("Wrong Finger!");
-
+    lcd.print("Wrong Finger");
     digitalWrite(RED_LED, HIGH);
     tone(BUZZER, 1500, 400);
-
     delay(1500);
     digitalWrite(RED_LED, LOW);
   }
-
-  delay(500);
 }
