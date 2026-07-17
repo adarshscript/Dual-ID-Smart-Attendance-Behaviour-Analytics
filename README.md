@@ -1,136 +1,129 @@
-# Dual ID Attendance System
+# DIAS Attendance System
 
-A secure Arduino-based attendance system using **RFID Card + Fingerprint Sensor**.
+Next.js based Dual-ID Attendance System for your college project. This app includes:
 
----
+- Landing page based on your shared design
+- Admin login with reset secret key
+- Admin dashboard, students, analytics
+- Classroom live grid
+- Student login and profile
+- Firebase Realtime Database sync
+- Floating AI chatbot on all pages
 
-## 📌 Description
+## 1. VS Code Terminal Commands
 
-Dual ID Attendance System uses **two-factor authentication** to mark attendance:
-- RFID Card verification
-- Fingerprint verification
+Run these commands inside:
 
-Attendance is recorded only when **both IDs match**, preventing proxy attendance.
-A **MASTER RFID card** is also implemented for administrative access.
+```powershell
+cd "C:\Users\Adarsh Maurya\OneDrive\Documents\DIAS"
+npm install
+npm run dev
+```
 
-All attendance records include **ENTRY / EXIT status with date and time** using an RTC module.
+Then open:
 
-Sensitive card data is intentionally masked in the source code for security.
+- `http://localhost:3000`
 
----
+## 2. Project Structure
 
-## ⚙️ Features
+```text
+DIAS/
+├─ package.json
+├─ tsconfig.json
+├─ next.config.ts
+├─ src/
+│  ├─ app/
+│  │  ├─ admin/
+│  │  │  ├─ analytics/page.tsx
+│  │  │  ├─ dashboard/page.tsx
+│  │  │  ├─ login/page.tsx
+│  │  │  └─ students/page.tsx
+│  │  ├─ classroom/page.tsx
+│  │  ├─ student/[roll]/page.tsx
+│  │  ├─ globals.css
+│  │  ├─ layout.tsx
+│  │  ├─ loading.tsx
+│  │  └─ page.tsx
+│  ├─ components/
+│  │  ├─ admin/
+│  │  ├─ chatbot/
+│  │  ├─ layout/
+│  │  ├─ shared/
+│  │  └─ student/
+│  ├─ hooks/use-dias-data.ts
+│  └─ lib/
+│     ├─ attendance.ts
+│     ├─ auth.ts
+│     ├─ chatbot.ts
+│     ├─ export.ts
+│     ├─ firebase.ts
+│     ├─ firebase-queries.ts
+│     ├─ fonts.ts
+│     ├─ format.ts
+│     └─ types.ts
+└─ README.md
+```
 
-- RFID + Fingerprint authentication
-- MASTER card support
-- Automatic ENTRY / EXIT toggle
-- Real-time clock logging
-- LCD display status
-- LED & buzzer indication
-- Excel-compatible serial output
-- Secure & reliable system
+## 3. Login Details
 
----
+- Admin username: `admin`
+- Default password: `dias2024`
+- Reset secret key: `DIAS-ADMIN-RESET-8055`
 
-## 🧠 Working Flow
+## 4. Student Login Rule
 
-1. Scan RFID card
-2. Place fingerprint
-3. If both match:
-   - ENTRY or EXIT is marked
-4. Date & time displayed on LCD
-5. Attendance sent to Serial Monitor
+Currently for demo:
 
-MASTER card allows attendance using **any registered fingerprint**.
+- Username field: student first name
+- Password field: same student roll number
 
----
+You can later replace this with Firebase Authentication or a custom `studentCredentials` node.
 
-## 🖥 Serial Output Format
+## 5. Firebase Nodes Used
 
-- Name,Roll,Status,Date Time
+The app reads these nodes:
 
+- `users`
+- `attendance`
+- `holidays`
+- `notifications`
 
-- Example:
-- Adarsh,4,ENTRY,2026-01-11 10:15:45
-- MASTER,2,EXIT,2026-01-11 16:30:12
+### Expected `users` example
 
+```json
+{
+  "name": "Adarsh",
+  "roll": "4",
+  "department": "Computer Science",
+  "email": "adarsh@dias.edu",
+  "phone": "",
+  "rfidTag": "RF004",
+  "fingerprintId": "FP004",
+  "createdAt": "2026-04-02T08:00:00.000Z"
+}
+```
 
----
+### Expected `attendance` example
 
-## 🔌 Hardware Used
+```json
+{
+  "name": "Adarsh",
+  "roll": "4",
+  "datetime": "2026-04-02T13:30:20.000Z",
+  "status": "ENTRY"
+}
+```
 
-- Arduino Uno
-- MFRC522 RFID Module
-- Fingerprint Sensor (R305/R307)
-- DS3231 RTC Module
-- 16x2 LCD (I2C)
-- LEDs & Buzzer
+## 6. Images and Icons
 
----
+This version is made mostly with CSS, gradients, icons, and glassmorphism so you do not need extra images immediately.
 
-## 📚 Libraries Required
+If later you want to add your own images:
 
-- MFRC522
-- RTClib
-- LiquidCrystal_I2C
-- Adafruit Fingerprint Sensor Library
-- SoftwareSerial
-- SPI
-- Wire
+- create `public/images/`
+- put files there
+- then use paths like `/images/your-image.png`
 
----
+## 7. Important Note
 
-## 🔒 Security Note
-
-RFID UIDs and MASTER card numbers are masked in the code.
-Replace masked values with real UIDs before hardware deployment.
-
----
-
-## 👨‍💻 Author
-
-**Adarsh Kumar Maurya**  
-B.Tech – Computer Science & Engineering
-
----
-
-## 🔌 Hardware Used
-
-- Arduino Uno
-- MFRC522 RFID Module
-- Fingerprint Sensor (R305/R307)
-- DS3231 RTC Module
-- 16x2 LCD (I2C)
-- LEDs & Buzzer
-
-- ---
-
-## 📚 Libraries Required
-
-- MFRC522
-- RTClib
-- LiquidCrystal_I2C
-- Adafruit Fingerprint Sensor Library
-- SoftwareSerial
-- SPI
-- Wire
-
----
-
-## 🔒 Security Note
-
-RFID UIDs and MASTER card numbers are masked in the code.
-Replace masked values with real UIDs before hardware deployment.
-
----
-
-## 👨‍💻 Author
-
-**Adarsh Kumar Maurya**  
-B.Tech – Computer Science & Engineering
-
----
-
-## 📜 License
-
-Educational use only.
+This is a strong project base and already matches your requested flow, but if you want the design to become even closer to each screenshot pixel-by-pixel, we can next do a second pass only for UI polishing page by page.
